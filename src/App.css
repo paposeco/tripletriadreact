@@ -1,38 +1,104 @@
-.App {
-  text-align: center;
+html{
+    box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.App{
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+#main{
+    width: 900px;
+    height: 900px;
+    margin: auto;
+    display: grid;
+    grid-template-areas:"a a a"
+                        "b b b"
+                        "c c c";
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.playerdeck{
+    width: 300px;
+    margin: 0 50px;
+    display: flex;
+    flex-direction: column;
+    height: 98vh;
 }
 
-.App-link {
-  color: #61dafb;
+.boardsquare{
+    width: 300px;
+    height: 300px;
+    margin: auto;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.boardsquare h3{
+    text-align: center;
+    margin-top: 30px;
+}
+
+.cornersquare{
+    border: 1px solid black;
+}
+
+.midsquare{
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+.extsquare{
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+.selected{
+    color: grey;
+}
+
+.boardcard{
+    margin-top: 20px;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    text-align: center;
+}
+
+.boardcard div{
+    height: 35px;
+}
+
+.boardcardmid{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.boardcardmid div{
+    flex: 1 1 auto;
+}
+
+.redplayercard{
+    color: red;
+}
+
+.blueplayercard{
+    color: blue;
+}
+
+#score{
+    height: 40px;
+    font-size: 20px;
+    margin: 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#score div{
+    padding-left: 10px;
+    padding-right: 10px;
 }
