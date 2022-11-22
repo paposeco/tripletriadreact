@@ -1,33 +1,46 @@
 import "./App.css";
 import type { Card } from "./common/types";
-//import Getcardfromcollection from "./Game";
+import movesperround from "./Game";
 import { blueplayerdeck, redplayerdeck, getcardfromcollection } from "./Game";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import checkForOpenGames from "./Firebase";
 
 const App = function() {
   const [selectedsquare, setselectedsquare] = useState("");
   const [cardselected, setcardselected] = useState("");
   const [finishedselectingcard, setfinishedselectingcard] = useState(false);
-  const [finishedselectingsquare, setfinishedselectingsquare] = useState(false);
   const [currentplayer, setcurrentplayer] = useState("");
+  const [count, setcount] = useState(0);
+  const [deckdisplayedRed, setdeckdisplayedRed] = useState(false);
+  const [deckdisplayedBlue, setdeckdisplayedBlue] = useState(false);
+  const [moves, setmoves] = useState([]);
+  const [scorered, setscorered] = useState(5);
+  const [scoreblue, setscoreblue] = useState(5);
+  const keeptrackofmoves = movesperround();
 
   const selectCard = function(event: React.MouseEvent<HTMLDivElement>): void {
+    setcount(count + 1);
+    const carddataset = event.currentTarget.dataset.card;
     if (currentplayer !== event.currentTarget.parentElement.id) {
       return;
     }
     if (finishedselectingcard) {
       return;
     }
+    event.currentTarget.classList.add("selected");
     const playerdiv = document.getElementById(currentplayer);
     if (playerdiv !== null) {
       const playerdeck = playerdiv.children;
       if (playerdeck.length !== 0) {
-        setcardselected(event.currentTarget.dataset.card);
+        setcardselected(carddataset);
+        setmoves((moves) => [...moves, carddataset]);
         setfinishedselectingcard(true);
         if (currentplayer === "redplayer") {
-          // movesperround.redplayercard(event.currentTarget.dataset.card);
+          console.log("keep track red: " + carddataset);
+          keeptrackofmoves.redplayercard(carddataset);
         } else if (currentplayer === "blueplayer") {
-          //  keeptrackofmoves.blueplayercard(event.currentTarget.dataset.card);
+          console.log("keep track blue: " + carddataset);
+          keeptrackofmoves.blueplayercard(carddataset);
         }
       }
     }
@@ -36,100 +49,116 @@ const App = function() {
   const selectSquare = function(
     event: React.MouseEvent<HTMLDivElement>
   ): void {
-    if (!cardselected) {
+    if (!finishedselectingcard) {
       return;
     }
-    setselectedsquare(event.currentTarget.id);
-    setfinishedselectingsquare(true);
-    //    const card = getcardfromcollection(cardselected);
-    const card = {
-      name: "sabotender",
-      power: [4, 3, 3, 3],
-      face: "",
-      cardID: "cardid1",
-    };
+    const squareID = event.currentTarget.id;
+    setselectedsquare(squareID);
+    setmoves((moves) => [...moves, squareID]);
+    const card = getcardfromcollection(cardselected);
     if (card !== undefined) {
       const cardtitle = document.createElement("h3");
-      this.appendChild(cardtitle);
-      cardtitle.textContent = card[0].name;
+      event.currentTarget.appendChild(cardtitle);
+      cardtitle.textContent = card.name;
       const newdiv = document.createElement("div");
-      this.appendChild(newdiv);
+      event.currentTarget.appendChild(newdiv);
       newdiv.classList.add("boardcard");
       const toppower = document.createElement("div");
       newdiv.appendChild(toppower);
-      toppower.textContent = `${card[0].power[0]}`;
+      toppower.textContent = `${card.power[0]}`;
       const midpowers = document.createElement("div");
       newdiv.appendChild(midpowers);
       midpowers.classList.add("boardcardmid");
       const rightpower = document.createElement("div");
-      rightpower.textContent = `${card[0].power[1]}`;
+      rightpower.textContent = `${card.power[1]}`;
       const leftpower = document.createElement("div");
       midpowers.appendChild(leftpower);
       midpowers.appendChild(rightpower);
-      leftpower.textContent = `${card[0].power[3]}`;
+      leftpower.textContent = `${card.power[3]}`;
       const bottompower = document.createElement("div");
       newdiv.appendChild(bottompower);
-      bottompower.textContent = `${card[0].power[2]}`;
-    }
-    const squareclass = currentplayer + "card";
-    event.currentTarget.classList.add(squareclass);
-    if (currentplayer === "redplayer") {
-      //keeptrackofmoves.redplayersquare(selectedsquare);
-    } else if (currentplayer === "blueplayer") {
-      //keeptrackofmoves.blueplayersquare(selectedsquare);
+      bottompower.textContent = `${card.power[2]}`;
+
+      const squareclass = currentplayer + "card";
+      event.currentTarget.classList.add(squareclass);
+      if (currentplayer === "redplayer") {
+        const updateGameStatus = keeptrackofmoves.redplayersquare(squareID);
+        if (updateGameStatus.length !== 0) {
+          updateGameStatus.forEach((square) => changeClassCapturedCard(square));
+        }
+        setcurrentplayer("blueplayer");
+      } else if (currentplayer === "blueplayer") {
+        const updateGameStatus = keeptrackofmoves.blueplayersquare(squareID);
+        if (updateGameStatus.length !== 0) {
+          updateGameStatus.forEach((square) => changeClassCapturedCard(square));
+        }
+        setcurrentplayer("redplayer");
+      }
+      setfinishedselectingcard(false);
     }
   };
 
   const displayDeck = function(playerid: string, deck: Card[]): void {
     const numberofcards = deck.length;
     const playerdiv = document.getElementById(playerid);
-    if (numberofcards > 0 && playerdiv.children.length === 0) {
+    if (numberofcards > 0) {
       if (playerdiv !== null) {
-        const h2player = document.createElement("h2");
-        playerdiv.appendChild(h2player);
-        if (playerid === "redplayer") {
-          h2player.textContent = "Red Player";
-        } else {
-          h2player.textContent = "Blue Player";
-        }
+        const carddivs = playerdiv.querySelectorAll<HTMLDivElement>(
+          "div.boardcard"
+        );
+
         for (let i = 0; i < numberofcards; i++) {
-          const newdiv = document.createElement("div");
-          playerdiv.appendChild(newdiv);
-          const title = document.createElement("h3");
-          title.classList.add("cardtitle");
-          title.textContent = deck[i].name;
-          newdiv.appendChild(title);
-          newdiv.classList.add("boardcard");
-          const toppower = document.createElement("div");
+          const carddiv: HTMLDivElement = carddivs[i];
+          carddiv.dataset["card"] = `${deck[i].cardID}`;
+          const carddivtitle = carddiv.querySelector("h3");
+          carddivtitle.textContent = deck[i].name;
+          const toppower = carddiv.querySelector("div.toppower");
           toppower.textContent = `${deck[i].power[0]}`;
-          const midpowers = document.createElement("div");
-          const rightpower = document.createElement("div");
+          const rightpower = carddiv.querySelector("div.rightpower");
           rightpower.textContent = `${deck[i].power[1]}`;
-          const bottompower = document.createElement("div");
+          const bottompower = carddiv.querySelector("div.bottompower");
           bottompower.textContent = `${deck[i].power[2]}`;
-          const leftpower = document.createElement("div");
+          const leftpower = carddiv.querySelector("div.leftpower");
           leftpower.textContent = `${deck[i].power[3]}`;
-          midpowers.appendChild(leftpower);
-          midpowers.appendChild(rightpower);
-          newdiv.appendChild(toppower);
-          newdiv.appendChild(midpowers);
-          newdiv.appendChild(bottompower);
-          newdiv.dataset.card = `${deck[i].cardID}`;
-          midpowers.classList.add("boardcardmid");
         }
       }
     }
   };
 
+  const changeClassCapturedCard = function(squareid: string) {
+    const div = document.getElementById(squareid);
+    if (div !== undefined) {
+      if (currentplayer === "redplayer") {
+        div.classList.replace("blueplayercard", "redplayercard");
+        setscorered(scorered + 1);
+        setscoreblue(scoreblue - 1);
+      } else if (currentplayer === "blueplayer") {
+        div.classList.replace("redplayercard", "blueplayercard");
+        setscoreblue(scoreblue + 1);
+        setscorered(scorered - 1);
+      }
+    }
+  };
+
   useEffect(() => {
-    displayDeck("redplayer", redplayerdeck);
-    // displayDeck("blueplayer", blueplayerdeck);
+    if (!deckdisplayedRed) {
+      displayDeck("redplayer", redplayerdeck);
+      setdeckdisplayedRed(true);
+    }
+    if (!deckdisplayedBlue) {
+      displayDeck("blueplayer", blueplayerdeck);
+      setdeckdisplayedBlue(true);
+    }
   }, []);
 
   useEffect(() => {
-    // get currentplayer from db
-    // but how will it rerender? maybe I can import a function from db to check for updates
-    setcurrentplayer("redplayer");
+    const selectedsquares = document.querySelectorAll("div.selected");
+    const selectedsquaresmod = selectedsquares.length % 2;
+    if (selectedsquaresmod === 0) {
+      setcurrentplayer("redplayer");
+    } else if (selectedsquaresmod === 1) {
+      setcurrentplayer("blueplayer");
+    }
   }, []);
 
   // se calhar tenho de começar por implementar os cliques e a base de dados. já que isto é dinamico. não dá para ser frontend só e esta logica dos cliques não fazem sentido.
@@ -141,13 +170,60 @@ const App = function() {
   //o score pode ser o modulo diferente
   return (
     <div className="App">
-      <div id="redplayer" className="playerdeck" onClick={selectCard}></div>
+      <div id="redplayer" className="playerdeck">
+        <h2>Red Player</h2>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+      </div>
       <div>
         <div id="score">
-          <div>Red Player:</div>
-          <div id="scorered">5</div>
-          <div>Blue Player:</div>
-          <div id="scoreblue">5</div>
+          <div>Red Player: </div>
+          <div id="scorered">{scorered}</div>
+          <div>Blue Player: </div>
+          <div id="scoreblue">{scoreblue}</div>
         </div>
         <div id="main">
           <div
@@ -197,7 +273,54 @@ const App = function() {
           ></div>
         </div>
       </div>
-      <div id="blueplayer" className="playerdeck" onClick={selectCard}></div>
+      <div id="blueplayer" className="playerdeck">
+        <h2>Blue Player</h2>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+        <div className="boardcard" data-card="" onClick={selectCard}>
+          <h3 className="cardtitle"></h3>
+          <div className="toppower"></div>
+          <div className="boardcardmid">
+            <div className="leftpower"></div>
+            <div className="rightpower"></div>
+          </div>
+          <div className="bottompower"></div>
+        </div>
+      </div>
     </div>
   );
 };

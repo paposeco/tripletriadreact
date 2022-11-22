@@ -11,4 +11,11 @@ interface Square {
     power: [number, number, number, number];
 }
 
-export { Square, Card };
+interface OpenGameDataDB {
+    players: number;
+    player1: string;
+    player2: string;
+    redplayer: string;
+}
+
+export { Square, Card, OpenGameDataDB };
