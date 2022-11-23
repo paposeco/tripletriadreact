@@ -3,7 +3,7 @@ import type { Card } from "./common/types";
 import movesperround from "./Game";
 import { blueplayerdeck, redplayerdeck, getcardfromcollection } from "./Game";
 import React, { useState, useEffect } from "react";
-import checkForOpenGames from "./Firebase";
+import { useLocation } from "react-router-dom";
 
 const App = function() {
   const [selectedsquare, setselectedsquare] = useState("");
@@ -17,6 +17,10 @@ const App = function() {
   const [scorered, setscorered] = useState(5);
   const [scoreblue, setscoreblue] = useState(5);
   const keeptrackofmoves = movesperround();
+  const location = useLocation();
+  const currentGameId = location.state.gameid;
+
+  // with gameid, fetch players ids from db and players decks.
 
   const selectCard = function(event: React.MouseEvent<HTMLDivElement>): void {
     setcount(count + 1);
